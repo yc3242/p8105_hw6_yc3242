@@ -9,13 +9,23 @@ output: github_document
 library(tidyverse)
 ```
 
+### Problem 1
+
+#### 1-(1)
+:Create a city_state variable (e.g. “Baltimore, MD”), and a binary variable indicating whether the homicide is solved. Omit cities Dallas, TX; Phoenix, AZ; and Kansas City, MO – these don’t report victim race. Also omit Tulsa, AL – this is a data entry mistake. Modifiy victim_race to have categories white and non-white, with white as the reference category. Be sure that victim_age is numeric.
 ```{r homicide_data_load}
 homicide_data = 
   read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>% 
-  janitor::clean_names()
+  janitor::clean_names() %>%  
+  unite(city_state, city, state, sep = ",") %>%  
+  mutate(hom_solved = ifelse((disposition == "Closed by arrest"), 1, 0)) %>% 
+  filter(!city_state %in% c("Dallas,TX", "Phoenix,AZ", "Kansas City,MO", "Tulsa,AL"))  %>% 
+  mutate(victim_race = 
+           ifelse((victim_race == "White"), "white", "non-white"),
+         victim_race = fct_relevel(victim_race, "white"),
+         victim_age = as.numeric(victim_age)) 
 ```
 
-Create a city_state variable (e.g. “Baltimore, MD”), and a binary variable indicating whether the homicide is solved. Omit cities Dallas, TX; Phoenix, AZ; and Kansas City, MO – these don’t report victim race. Also omit Tulsa, AL – this is a data entry mistake. Modifiy victim_race to have categories white and non-white, with white as the reference category. Be sure that victim_age is numeric.
 
 For the city of Baltimore, MD, use the glm function to fit a logistic regression with resolved vs unresolved as the outcome and victim age, sex and race (as just defined) as predictors. Save the output of glm as an R object; apply the broom::tidy to this object; and obtain the estimate and confidence interval of the adjusted odds ratio for solving homicides comparing non-white victims to white victims keeping all other variables fixed.
 
