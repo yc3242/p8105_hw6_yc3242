@@ -60,7 +60,8 @@ city_hom_logistic =
       family = binomial(), data = df)
   }
 
-city_homicide_data %>%
+city_homicide_logistic_results =
+  city_homicide_data %>%
   mutate(model = map(data, city_hom_logistic),
         tidy_results = model %>% map(broom::tidy)) %>%
   select(city_state, tidy_results) %>%
@@ -70,12 +71,35 @@ city_homicide_data %>%
          upper_CI_OR = exp(estimate + 1.96*std.error)) %>% 
   select(city_state, term, OR, lower_CI_OR, upper_CI_OR) %>% 
   filter(term == "victim_racenon-white") %>% 
-  mutate(term = str_replace(term, "victim_racenon-white", "race:non-white")) %>%   knitr::kable()
+  mutate(term = str_replace(term, "victim_racenon-white", "race:non-white")) 
+
+city_homicide_logistic_results 
 ```
 
 
+#### 1-(4)
+Create a plot that shows the estimated ORs and CIs for each city. Organize cities according to estimated OR, and comment on the plot.
 
-Create a plot that shows the estimated ORs and CIs for each city. Organize cities according to estimated OR, and comment on the plot
+```{r city_logistic_plot, fig.height = 7}
+city_homicide_logistic_results %>% 
+  mutate(city_state = fct_reorder(city_state, OR)) %>% 
+  ggplot(aes(x = city_state, y = OR)) + 
+  geom_point() + 
+  geom_errorbar(aes(ymin = lower_CI_OR, ymax = upper_CI_OR), 
+                color = "darkred") +
+  coord_flip() +
+  labs(
+    title = "Odds ratio for solving homicides comparing non-white victims to white victims each city",
+    subtitle = "Error bar using OR as center with 95% CIs",
+    y = "Odds ratio",
+    x = "City,State"
+  ) +
+  theme(plot.title = element_text(size = 12),
+        plot.subtitle = element_text(size = 9)) +
+  theme_bw()
+```
+
+
 
 ```{r birthweight_data_load}
 birthweight_data = 
