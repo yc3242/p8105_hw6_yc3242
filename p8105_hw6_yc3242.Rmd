@@ -5,14 +5,26 @@ date: "November 18, 2018"
 output: github_document
 ---
 
-```{r}
+```{r setup, include=FALSE}
 library(tidyverse)
+library(modelr)
+library(mgcv)
+
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_bw())
 ```
 
 ### Problem 1
 
 #### 1-(1)
 :Create a city_state variable (e.g. “Baltimore, MD”), and a binary variable indicating whether the homicide is solved. Omit cities Dallas, TX; Phoenix, AZ; and Kansas City, MO – these don’t report victim race. Also omit Tulsa, AL – this is a data entry mistake. Modifiy victim_race to have categories white and non-white, with white as the reference category. Be sure that victim_age is numeric.
+
 ```{r homicide_tidy_data}
 homicide_data = 
   read_csv("https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv") %>% 
@@ -48,6 +60,7 @@ balti_logistic %>%
 
 #### 1-(3)
 :Now run glm for each of the cities in your dataset, and extract the adjusted odds ratio (and CI) for solving homicides comparing non-white victims to white victims. Do this within a “tidy” pipeline, making use of  purrr::map, list columns, and unnest as necessary to create a dataframe with estimated ORs and CIs for each city.
+
 ```{r city_logistic}
 city_homicide_data = 
   homicide_data %>% 
@@ -101,42 +114,285 @@ city_homicide_logistic_results %>%
 
 In terms of solving homicides, non-white people has lower odds compared to white people in cities whose OR is less than 1. For cities whose OR is greater than 1, non-white people has greater odds compared to white people. However, if 95% confidence interval contains 1, it is not statistically significant at the significance level 0.05. 
 
-```{r birthweight_data_load}
-birthweight_data = 
-  read_csv("data/birthweight.csv") %>% 
-  janitor::clean_names()
-```
+
+### Problem 2
 
 In this probelm, you will analyze data gathered to understand the effects of several variables on a child’s birthweight. This dataset, available here, consists of roughly 4000 children and includes the following variables:
 
-babysex: baby’s sex (male = 1, female = 2)
-bhead: baby’s head circumference at birth (centimeters)
-blength: baby’s length at birth (centimeteres)
-bwt: baby’s birth weight (grams)
-delwt: mother’s weight at delivery (pounds)
-fincome: family monthly income (in hundreds, rounded)
-frace: father’s race (1= White, 2 = Black, 3 = Asian, 4 = Puerto Rican, 8 = Other, 9 = Unknown)
-gaweeks: gestational age in weeks
-malform: presence of malformations that could affect weight (0 = absent, 1 = present)
-menarche: mother’s age at menarche (years)
-mheigth: mother’s height (inches)
-momage: mother’s age at delivery (years)
-mrace: mother’s race (1= White, 2 = Black, 3 = Asian, 4 = Puerto Rican, 8 = Other)
-parity: number of live births prior to this pregnancy
-pnumlbw: previous number of low birth weight babies
-pnumgsa: number of prior small for gestational age babies
-ppbmi: mother’s pre-pregnancy BMI
-ppwt: mother’s pre-pregnancy weight (pounds)
-smoken: average number of cigarettes smoked per day during pregnancy
-wtgain: mother’s weight gain during pregnancy (pounds)
+- babysex: baby’s sex (male = 1, female = 2)
+- bhead: baby’s head circumference at birth (centimeters)
+- blength: baby’s length at birth (centimeteres)
+- bwt: baby’s birth weight (grams)
+- delwt: mother’s weight at delivery (pounds)
+- fincome: family monthly income (in hundreds, rounded)
+- frace: father’s race (1= White, 2 = Black, 3 = Asian, 4 = Puerto Rican, 8 = Other, 9 = Unknown)
+- gaweeks: gestational age in weeks
+- malform: presence of malformations that could affect weight (0 = absent, 1 = present)
+- menarche: mother’s age at menarche (years)
+- mheigth: mother’s height (inches)
+- momage: mother’s age at delivery (years)
+- mrace: mother’s race (1= White, 2 = Black, 3 = Asian, 4 = Puerto Rican, 8 = Other)
+- parity: number of live births prior to this pregnancy
+- pnumlbw: previous number of low birth weight babies
+- pnumgsa: number of prior small for gestational age babies
+- ppbmi: mother’s pre-pregnancy BMI
+- ppwt: mother’s pre-pregnancy weight (pounds)
+- smoken: average number of cigarettes smoked per day during pregnancy
+- wtgain: mother’s weight gain during pregnancy (pounds)
+
+#### 2-(1)
 Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
+#?????????????????????frace, mrace fct order??????
+```{r birthweight_data_load}
+birthweight_data = 
+  read_csv("data/birthweight.csv") %>% 
+  janitor::clean_names() %>% 
+  mutate(babysex = as.factor(babysex),
+         frace = as.factor(frace),
+         frace = case_when(
+             frace == 1 ~ "White",
+             frace == 2 ~ "Black",
+             frace == 3 ~ "Asian",
+             frace == 4 ~ "Puerto Rican",
+             frace == 8 ~ "Other"),
+         malform = as.factor(malform),
+         mrace = as.factor(mrace))
+```
 
-Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use  add_predictions and add_residuals in making this plot.
 
+#### 2-(2)
+:Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use  add_predictions and add_residuals in making this plot.
+
+**1) Association: bwt vs variables**
+```{r fig.width = 3, fig.asp = .6, out.width = "50%"}
+
+## Association: bwt vs variables
+
+birthweight_data %>% 
+  ggplot(aes(x = babysex, y = bwt)) +
+  geom_point() ## week 
+
+birthweight_data %>% 
+  ggplot(aes(x = bhead, y = bwt)) +
+  geom_point() + geom_smooth() ## strong 
+  
+birthweight_data %>% 
+  ggplot(aes(x = blength, y = bwt)) +
+  geom_point() + geom_smooth() ## strong
+
+birthweight_data %>% 
+  ggplot(aes(x = delwt, y = bwt)) +
+  geom_point() + geom_smooth() ## week
+
+birthweight_data %>% 
+  ggplot(aes(x = fincome, y = bwt)) +
+  geom_point() + geom_smooth() ## no effect
+
+birthweight_data %>% 
+  ggplot(aes(x = frace, y = bwt)) +
+  geom_point() ## week effect
+
+birthweight_data %>% 
+  ggplot(aes(x = gaweeks, y = bwt)) +
+  geom_point() + geom_smooth() ## week
+
+birthweight_data %>% 
+  ggplot(aes(x = malform, y = bwt)) +
+  geom_point() ## week effect
+
+birthweight_data %>% 
+  ggplot(aes(x = menarche, y = bwt)) +
+  geom_point() + geom_smooth() ## no effect
+
+birthweight_data %>% 
+  ggplot(aes(x = mheight, y = bwt)) +
+  geom_point() + geom_smooth() ## no effect
+
+birthweight_data %>% 
+  ggplot(aes(x = momage, y = bwt)) +
+  geom_point() + geom_smooth() ## no effect
+
+birthweight_data %>% 
+  ggplot(aes(x = mrace, y = bwt)) +
+  geom_point() ## week effect
+
+birthweight_data %>% 
+  ggplot(aes(x = parity, y = bwt)) +
+  geom_point() + geom_smooth() ## no effect
+
+birthweight_data %>% 
+  ggplot(aes(x = pnumlbw, y = bwt)) +
+  geom_point() + geom_smooth() ## no effect
+
+birthweight_data %>% 
+  ggplot(aes(x = pnumsga, y = bwt)) +
+  geom_point() + geom_smooth() ## no effect
+
+birthweight_data %>% 
+  ggplot(aes(x = ppwt, y = bwt)) +
+  geom_point() + geom_smooth() ## week effect
+
+birthweight_data %>% 
+  ggplot(aes(x = smoken, y = bwt)) +
+  geom_point() + geom_smooth() ## no effect
+
+birthweight_data %>% 
+  ggplot(aes(x = wtgain, y = bwt)) +
+  geom_point() + geom_smooth() ## week effect
+```
+
+
+**2) Model comparison: Hypothesis testing**
+```{r}
+## strong effect variables only
+fit_null = 
+  birthweight_data %>%
+  select(bwt, bhead, blength) %>% 
+  lm(bwt ~., data = .)
+
+## strong + week effect variables 
+fit_alt =  
+  birthweight_data %>% 
+  select(bwt, babysex, bhead, blength, delwt, frace, gaweeks, malform, mrace, ppbmi, ppwt, wtgain) %>% 
+  lm(bwt ~., data = .)
+
+anova(fit_null, fit_alt) %>% 
+  broom::tidy() %>% 
+  knitr::kable() 
+```
+
+First, I looked at the association between outcome variable(birthweight) and each explanatory variable by scatterplot. After skimming, I fit the linear model with variables which are considered strongly associated with outcome variable based on the scatterplots. And then, I added variables which has shown week association with outcome variable. As a result of hypothesis testing, the more complex model is significantly better than the simpler model at the significance level 0.05. 
+
+**3) plot of model residuals against fitted values** 
+
+```{r fig.width = 4, fig.asp = .6, out.width = "50%"}
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  mutate(babysex = ifelse((babysex == 1), "male", "female")) %>% 
+  ggplot(aes(x = babysex, y = resid)) + 
+  geom_violin(aes(fill = babysex), alpha = .5) +
+  labs(x = "baby sex",
+       y = "residuals") +
+  viridis::scale_fill_viridis(
+    discrete = TRUE
+    )
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = bhead, y = resid)) + 
+  geom_point() +
+  labs(x = "baby's head circumference at birth (cm)",
+       y = "residuals") 
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = blength, y = resid)) + 
+  geom_point() +
+  labs(x = "baby's length at birth (cm)",
+       y = "residuals") 
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = delwt, y = resid)) + 
+  geom_point() +
+  labs(x = "mother's weight at delivery(lb)",
+       y = "residuals") 
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = frace, y = resid)) + 
+  geom_violin(aes(fill = frace), alpha = .5) +
+  labs(x = "father's race",
+       y = "residuals") +
+  viridis::scale_fill_viridis(
+    discrete = TRUE
+    )
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = gaweeks, y = resid)) + 
+  geom_point() +
+  labs(x = "gestational ages in weeks",
+       y = "residuals")
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  mutate(malform = ifelse((malform == 0), "absent", "present")) %>% 
+  ggplot(aes(x = malform, y = resid)) + 
+  geom_violin(aes(fill = malform), alpha = .5) +
+  labs(x = "presence of malformations",
+       y = "residuals") +
+  viridis::scale_fill_viridis(
+    discrete = TRUE
+    )
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = mrace, y = resid)) + 
+  geom_violin(aes(fill = mrace), alpha = .5) +
+  labs(x = "mather's race",
+       y = "residuals") +
+  viridis::scale_fill_viridis(
+    discrete = TRUE
+    )
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = ppbmi, y = resid)) + 
+  geom_point() +
+  labs(x = "mother's pre-pregnancy BMI",
+       y = "residuals")
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = ppwt, y = resid)) + 
+  geom_point() +
+  labs(x = "mother's pre-pregnancy weight(lb)",
+       y = "residuals")
+
+birthweight_data %>% 
+  add_residuals(fit_alt) %>% 
+  ggplot(aes(x = wtgain, y = resid)) + 
+  geom_point() +
+  labs(x = "mother's weight gain during pregnancy",
+       y = "residuals")
+```
+
+
+#### 2-(3)????????????????????????????????
 Compare your model to two others:
-
 One using length at birth and gestational age as predictors (main effects only)
-One using head circumference, length, sex, and all interactions (including the three-way interaction) between these
-Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in  purrr as appropriate.
+One using head circumference, length, sex, and all interactions (including the three-way interaction) between these.
+Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in  purrr as appropriate. 
 
-Note that although we expect your model to be reasonable, model building itself is not a main idea of the course and we don’t necessarily expect your model to be “optimal”.
+```{r}
+fit_alt_main =
+  birthweight_data %>%
+  select(bwt, blength, gaweeks) %>% 
+  lm(bwt ~., data = .)
+
+fit_alt_int =
+  lm(bwt ~ bhead*blength + bhead*babysex + blength*babysex, 
+     data = birthweight_data)
+
+crossv_mc(birthweight_data, 100) %>% 
+  mutate(train = map(train, as_tibble),
+         test = map(test, as_tibble)) %>% 
+  mutate(alt      = map(train, 
+                   ~lm(bwt ~ babysex + bhead + blength + delwt + frace + gaweeks
+                       + malform + mrace + ppbmi + ppwt + wtgain, data = .x)),
+         alt_main = map(train, ~lm(bwt ~ blength + gaweeks, data = .x)),
+         alt_int  = map(train, ~lm(bwt ~ bhead*blength + bhead*babysex +
+                                     blength*babysex, data = .x))) %>% 
+  mutate(rmse_alt    = map2_dbl(alt, test, ~rmse(model = .x, data = .y)),
+         rmse_alt_main = map2_dbl(alt_main, test, ~rmse(model = .x, data = .y)),
+         rmse_alt_int = map2_dbl(alt_int, test, ~rmse(model = .x, data = .y))) %>% 
+  select(starts_with("rmse")) %>% 
+  gather(key = model, value = rmse) %>% 
+  mutate(model = str_replace(model, "rmse_", ""),
+         model = fct_inorder(model)) %>% 
+  ggplot(aes(x = model, y = rmse)) + geom_violin()
+
+```
+
+
