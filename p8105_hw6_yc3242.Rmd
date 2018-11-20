@@ -99,7 +99,7 @@ city_homicide_logistic_results %>%
   theme_bw()
 ```
 
-
+In terms of solving homicides, non-white people has lower odds compared to white people in cities whose OR is less than 1. For cities whose OR is greater than 1, non-white people has greater odds compared to white people. However, if 95% confidence interval contains 1, it is not statistically significant at the significance level 0.05. 
 
 ```{r birthweight_data_load}
 birthweight_data = 
