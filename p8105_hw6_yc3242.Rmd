@@ -29,7 +29,7 @@ homicide_data =
 #### 1-(2)
 For the city of Baltimore, MD, use the glm function to fit a logistic regression with resolved vs unresolved as the outcome and victim age, sex and race (as just defined) as predictors. Save the output of glm as an R object; apply the broom::tidy to this object; and obtain the estimate and confidence interval of the adjusted odds ratio for solving homicides comparing non-white victims to white victims keeping all other variables fixed.
 
-```{r}
+```{r balti_logistic}
 balti_logistic = 
   homicide_data %>% 
   filter(city_state == "Baltimore,MD") %>% 
@@ -43,12 +43,37 @@ balti_logistic %>%
          upper_CI_OR = exp(estimate + 1.96*std.error)) %>% 
   select(term, OR, lower_CI_OR, upper_CI_OR) %>% 
   filter(term == "victim_racenon-white") %>% 
-  mutate(term = 
-          str_replace(term, "victim_racenon-white", "victim_race:non-white")) %>%   knitr::kable()
+  mutate(term = str_replace(term, "victim_racenon-white", "race:non-white")) %>%   knitr::kable()
+```
+
+#### 1-(3)
+:Now run glm for each of the cities in your dataset, and extract the adjusted odds ratio (and CI) for solving homicides comparing non-white victims to white victims. Do this within a “tidy” pipeline, making use of  purrr::map, list columns, and unnest as necessary to create a dataframe with estimated ORs and CIs for each city.
+```{r city_logistic}
+city_homicide_data = 
+  homicide_data %>% 
+  group_by(city_state) %>% 
+  nest()
+
+city_hom_logistic =
+  function(df) {
+    glm(hom_solved ~ victim_age + victim_sex + victim_race, 
+      family = binomial(), data = df)
+  }
+
+city_homicide_data %>%
+  mutate(model = map(data, city_hom_logistic),
+        tidy_results = model %>% map(broom::tidy)) %>%
+  select(city_state, tidy_results) %>%
+  unnest() %>% 
+  mutate(OR = exp(estimate),
+         lower_CI_OR = exp(estimate - 1.96*std.error),
+         upper_CI_OR = exp(estimate + 1.96*std.error)) %>% 
+  select(city_state, term, OR, lower_CI_OR, upper_CI_OR) %>% 
+  filter(term == "victim_racenon-white") %>% 
+  mutate(term = str_replace(term, "victim_racenon-white", "race:non-white")) %>%   knitr::kable()
 ```
 
 
-Now run glm for each of the cities in your dataset, and extract the adjusted odds ratio (and CI) for solving homicides comparing non-white victims to white victims. Do this within a “tidy” pipeline, making use of  purrr::map, list columns, and unnest as necessary to create a dataframe with estimated ORs and CIs for each city.
 
 Create a plot that shows the estimated ORs and CIs for each city. Organize cities according to estimated OR, and comment on the plot
 
