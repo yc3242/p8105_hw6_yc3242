@@ -9,7 +9,7 @@ output: github_document
 library(tidyverse)
 library(modelr)
 library(mgcv)
-
+ 
 knitr::opts_chunk$set(
   collapse = TRUE,
   fig.width = 6,
@@ -93,7 +93,7 @@ city_homicide_logistic_results
 #### 1-(4)
 Create a plot that shows the estimated ORs and CIs for each city. Organize cities according to estimated OR, and comment on the plot.
 
-```{r city_logistic_plot, fig.height = 7}
+```{r city_logistic_plot, fig.height = 13}
 city_homicide_logistic_results %>% 
   mutate(city_state = fct_reorder(city_state, OR)) %>% 
   ggplot(aes(x = city_state, y = OR)) + 
@@ -113,7 +113,7 @@ city_homicide_logistic_results %>%
   theme_bw()
 ```
 
-In terms of solving homicides, non-white people has lower odds compared to white people in cities whose OR is less than 1. For cities whose OR is greater than 1, non-white people has greater odds compared to white people. However, if 95% confidence interval contains 1, it is not statistically significant at the significance level 0.05. 
+In terms of solving homicides, non-white people has lower odds compared to white people in cities whose OR is less than 1. For cities whose OR is greater than 1, non-white people has greater odds compared to white people. However, 95% confidence interval contains 1, it is not statistically significant at the significance level 0.05. Most cities have no significant result from this reasons. Among cities whose CI does not contain 1, Boston,MA has the lowest odds ratio and Las Vegas,NV has the highest odds ratio but still less than 1.
 
 
 ### Problem 2
@@ -143,7 +143,7 @@ In this probelm, you will analyze data gathered to understand the effects of sev
 
 #### 2-(1)
 Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
-#?????????????????????frace, mrace fct order??????
+
 ```{r birthweight_data_load}
 race_level = c("White", "Black", "Asian", "Puerto Rican", "Other")
 
@@ -166,6 +166,9 @@ birthweight_data =
              mrace == 4 ~ "Puerto Rican",
              mrace == 8 ~ "Other"),
          mrace = fct_relevel(mrace, race_level))
+
+# Check missing data
+sum(is.na(birthweight_data))
 ```
 
 
@@ -180,98 +183,248 @@ birthweight_data =
 birthweight_data %>% 
   ggplot(aes(x = babysex, y = bwt)) +
   geom_boxplot() +
-  labs(title = "birthweight vs baby’s sex") ## no effect 
+  labs(subtitle = "birthweight vs baby’s sex") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## no effect 
 
 birthweight_data %>% 
   ggplot(aes(x = bhead, y = bwt)) +
   geom_point() + 
   geom_smooth() +
-  labs(title = "birthweight vs baby’s head circumference at birth",
+  labs(subtitle = "birthweight vs baby’s head circumference at birth",
        y = "birthweight",
-       x = "baby's head circumference (cm)") ## strong 
+       x = "baby's head circumference (cm)") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## strong 
   
 birthweight_data %>% 
   ggplot(aes(x = blength, y = bwt)) +
   geom_point() + 
   geom_smooth() +
-  labs(title = "birthweight vs baby’s length at birth (cm)",
+  labs(subtitle = "birthweight vs baby’s length at birth (cm)",
        y = "birthweight",
-       x = "baby’s length at birth (cm)") ## strong
+       x = "baby’s length at birth (cm)") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## strong
 
 birthweight_data %>% 
   ggplot(aes(x = delwt, y = bwt)) +
   geom_point() + 
   geom_smooth() +
-  labs(title = "birthweight vs mother’s weight at delivery",
+  labs(subtitle = "birthweight vs mother’s weight at delivery",
        y = "birthweight",
-       x = "mother’s weight at delivery (lb)") ## week
+       x = "mother’s weight at delivery (lb)") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## week
 
 birthweight_data %>% 
   ggplot(aes(x = fincome, y = bwt)) +
   geom_point() + 
   geom_smooth() +
-  labs(title = "birthweight vs family monthly income",
+  labs(subtitle = "birthweight vs family monthly income",
        y = "birthweight",
-       x = "family monthly income") ## no effect
+       x = "family monthly income") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = frace, y = bwt)) +
-  geom_boxplot() ## no effect
+  geom_boxplot() +
+  labs(subtitle = "birthweight vs father's race",
+       y = "birthweight",
+       x = "father's race") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = gaweeks, y = bwt)) +
-  geom_point() + geom_smooth() ## week
+  geom_point() + 
+  geom_smooth() +
+  labs(subtitle = "birthweight vs gestational age in weeks",
+       y = "birthweight",
+       x = "gestational age in weeks") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## week
 
 birthweight_data %>% 
   ggplot(aes(x = malform, y = bwt)) +
-  geom_boxplot() ## no effect
+  geom_boxplot() +
+  labs(subtitle = "birthweight vs presence of malformations",
+       y = "birthweight",
+       x = "presence of malformations") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = menarche, y = bwt)) +
-  geom_point() + geom_smooth() ## no effect
+  geom_point() + 
+  geom_smooth() +
+  labs(subtitle = "birthweight vs mother’s age at menarche",
+       y = "birthweight",
+       x = "mother’s age at menarche (years)") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = mheight, y = bwt)) +
-  geom_point() + geom_smooth() ## no effect
+  geom_point() + 
+  geom_smooth() +
+  labs(subtitle = "birthweight vs mother’s height",
+       y = "birthweight",
+       x = "mother’s height (inches)") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = momage, y = bwt)) +
-  geom_point() + geom_smooth() ## no effect
+  geom_point() + 
+  geom_smooth() +
+  labs(subtitle = "birthweight vs mother’s age at delivery",
+       y = "birthweight",
+       x = "mother’s age at delivery (years)") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = mrace, y = bwt)) +
-  geom_boxplot() ## week effect
+  geom_boxplot() +
+  labs(subtitle = "birthweight vs mother's race",
+       y = "birthweight",
+       x = "mother's race") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## week effect
 
 birthweight_data %>% 
   ggplot(aes(x = parity, y = bwt)) +
-  geom_boxplot() ## no effect
+  geom_point() +
+  labs(subtitle = "birthweight vs number of live births prior to this pregnancy",
+       y = "birthweight",
+       x = "number of live births prior to this pregnancy") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7))  ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = pnumlbw, y = bwt)) +
-  geom_boxplot() ## no effect
+  geom_point() +
+  labs(subtitle = "birthweight vs previous number of low birth weight babies",
+       y = "birthweight",
+       x = "previous number of low birth weight babies") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7))  ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = pnumsga, y = bwt)) +
-  geom_boxplot() ## no effect
+  geom_point() +
+  labs(subtitle = "birthweight vs number of prior small for gestational age babies",
+       y = "birthweight",
+       x = "number of prior small for gestational age babies") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7))  ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = ppbmi, y = bwt)) +
-  geom_point() + geom_smooth() ## week effect
+  geom_point() + 
+  geom_smooth() +
+  labs(subtitle = "birthweight vs mother’s pre-pregnancy BMI",
+       y = "birthweight",
+       x = "mother’s pre-pregnancy BMI") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## week effect
 
 birthweight_data %>% 
   ggplot(aes(x = ppwt, y = bwt)) +
-  geom_point() + geom_smooth() ## week effect
+  geom_point() + 
+  geom_smooth() +
+  labs(subtitle = "birthweight vs mother’s pre-pregnancy weight ",
+       y = "birthweight",
+       x = "mother’s pre-pregnancy weight (lb)") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## week effect
 
 birthweight_data %>% 
   ggplot(aes(x = smoken, y = bwt)) +
-  geom_point() + geom_smooth() ## no effect
+  geom_point() + 
+  geom_smooth() +
+  labs(subtitle = "birthweight vs average number of cigarettes smoked per day during pregnancy",
+       y = "birthweight",
+       x = "average number of cigarettes smoked per day during pregnancy") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## no effect
 
 birthweight_data %>% 
   ggplot(aes(x = wtgain, y = bwt)) +
-  geom_point() + geom_smooth() ## week effect
+  geom_point() + 
+  geom_smooth() +
+  labs(subtitle = "birthweight vs mother’s weight gain during pregnancy",
+       y = "birthweight",
+       x = "mother’s weight gain during pregnancy (lb)") +
+  theme(plot.subtitle = element_text(size = 9),
+        axis.text.x = element_text(size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 7),
+        axis.title.y = element_text(size = 7)) ## week effect
 ```
 
+With regard to association between outcome(birthweight) and covariates, in case of categorical covariates, boxplots are used and in case of continuous covariates, I looked at the scatter plot with loess smoother. As a result, I categorized covariates with the level of association with birthweight:
+- **strong association**: bhead, blength
+- **week association**: delwt, gaweeks, mrace, ppbmi, ppwt, wtgain
+- **no association**: babysex, fincome, frace, malform, menarche, mheight, momage, parity, pnumlbw, pnumbsga, smoken
 
+ 
 **2) Model comparison: Hypothesis testing**
 ```{r}
 ## strong effect variables only
@@ -292,7 +445,10 @@ anova(fit_str_week, fit_str) %>%
   knitr::kable() 
 ```
 
-First, I looked at the association between outcome variable(birthweight) and each explanatory variable by scatterplot. After skimming, I fit the linear model with variables which are considered strongly associated with outcome variable based on the scatterplots. And then, I added variables which has shown week association with outcome variable. As a result of hypothesis testing, the more complex model is significantly better than the simpler model at the significance level 0.05. 
+After skimming the association between birthweight and each explanatory variables, I fit two linear models as follows:
+- 1) birthweight with variables categorized in strong association.
+- 2) birthweight with variables categorized in strong and week association.
+As a result of model comparison, the more complex model (model 2)) is significantly better than the simpler model (model 1)) at the significance level 0.05. 
 
 **3) plot of model residuals against fitted values** 
 
@@ -308,14 +464,14 @@ birthweight_data %>%
        y = "Residuals")
 ```
 
+This model is poor if birthweight is low since residual is much greater than 0 but model fits well if birthweight is over 2000 with residuals close 0. 
 
 #### 2-(3)
 Compare your model to two others:
 One using length at birth and gestational age as predictors (main effects only)
 One using head circumference, length, sex, and all interactions (including the three-way interaction) between these.
-Make this comparison in terms of the cross-validated prediction error; use crossv_mc and functions in purrr as appropriate. 
 
-```{r}
+```{r warning = FALSE}
 fit_alt_main =
   birthweight_data %>%
   select(bwt, blength, gaweeks) %>% 
@@ -337,8 +493,8 @@ crossv_mc(birthweight_data, 100) %>%
   gather(key = model, value = rmse) %>% 
   mutate(model = str_replace(model, "rmse_", ""),
          model = fct_inorder(model)) %>% 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()
-
+  ggplot(aes(x = model, y = rmse)) + geom_violin() +
+  labs(title = "root mean squared errors (RMSEs) in each models")
 ```
 
-
+Based on this result, final model (str_week) is improved in predictive accuracy than main effect only model and a model including three-way interaction. 
